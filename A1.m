@@ -8,7 +8,7 @@ temperature = 300; %Kelvin
 mass_electron = 9.10938356e-31; %electron rest mass [kg]
 mass_effective = 0.26*mass_electron; %electron effective mass [kg]
 const_boltzman = 1.38064852e-23; %Boltzman constant [m^2 kg / s^2 K]
-velocity_thermal = sqrt(const_boltzman*temperature/mass_effective); %TODO %thermal velocity
+velocity_thermal = sqrt(const_boltzman*temperature/mass_effective); %thermal velocity
 
 particleArray = [];
 
@@ -61,6 +61,6 @@ for simCount = 1:simLength
     
     scatter(particleArray(:,1), particleArray(:,2), 5);
     axis([0, region_size_x, 0, region_size_y]);
-    pause(0.01);
+    pause(0.05);
     
 end
