@@ -10,17 +10,22 @@ mass_electron = 9.10938356e-31; %electron rest mass [kg]
 mass_effective = 0.26*mass_electron; %electron effective mass [kg]
 const_boltzman = 1.38064852e-23; %Boltzman constant [m^2 kg / s^2 K]
 velocity_thermal = sqrt(const_boltzman*temperature/mass_effective); %thermal velocity
+collisionTime = 0.2e-12; %time between particle collisions
 
 %particle array is in following format: 
-%xPos, yPos, Velocity Mag, xDir(norm), yDir(norm)
+%xPos, yPos, Velocity Mag, xDir(norm), yDir(norm), TimeSinceLastScatter
 particleArray = [];
 
 tempArrary = []; %array to store temperature history
 particleXPos7Array = []; %array to store 7 X positions history
 particleYPos7Array = []; %array to store 7 Y positions history
+scatterTimeArray = []; %array to store the time between scatters
 
-Part2 = 0;
-Part3 = 0;
+scatterProbability = 1 - exp(-timestep/collisionTime); %probability of particle being scattered
+
+%change both of these to 0 if you want part 1 plots
+Part2 = 1; %change this to 1 & Part3 to 0 if you want part 2 plots
+Part3 = 0; %change this to 1 if you want part 3 plots
 
 %initialize the particles
 for i = 1:numParticles
@@ -29,10 +34,9 @@ for i = 1:numParticles
     particleArray(i,2) = rand * region_size_y;
     
     if(Part2 == 1 || Part3 == 1)
-        vth = randn*1e5 + velocity_thermal;
-        %vth = sqrt(random('chisquare',3));%*velocity_thermal;
+        vth = randn*velocity_thermal + velocity_thermal;
     else
-       vth = velocity_thermal;
+        vth = velocity_thermal;
     end
     %init velocity
     particleArray(i,3) = vth; %velocity magnitude
@@ -41,6 +45,8 @@ for i = 1:numParticles
     if(rand > 0.5)
         particleArray(i,5) = particleArray(i,5) * -1;
     end
+    
+    particleArray(i,6) = 0; %set time since last scatter to 0
         
 end
 
@@ -54,10 +60,28 @@ ylabel('Counts');
 for simCount = 1:simLength
     currTime = simCount * timestep;
         
+    %scatter particles
+    for i = 1:numParticles
+        %update time since last scatter
+        particleArray(i,6) = particleArray(i,6) + timestep;
+        
+        if(rand <= scatterProbability) %scatter the particle
+            particleArray(i,3) = randn*velocity_thermal + velocity_thermal; %randomize velocity
+            particleArray(i,4) = (rand * 2) - 1; %x-direction (normalized)
+            particleArray(i,5) = sqrt(1-particleArray(i,4)^2); %y-direction (normalized)
+            if(rand > 0.5)
+                particleArray(i,5) = particleArray(i,5) * -1;
+            end
+            %store time between scatters
+            particleArray(i,6) = 0; %reset time since last scatter
+        end
+    end
     
     %update particle positions
     new_xPos = particleArray(:,1) + timestep * particleArray(:,3) .* particleArray(:,4);
     new_yPos = particleArray(:,2) + timestep * particleArray(:,3) .* particleArray(:,5);
+    
+    
     
     %check boundary conditions
     for i = 1:numParticles
