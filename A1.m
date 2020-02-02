@@ -11,11 +11,15 @@ mass_effective = 0.26*mass_electron; %electron effective mass [kg]
 const_boltzman = 1.38064852e-23; %Boltzman constant [m^2 kg / s^2 K]
 velocity_thermal = sqrt(const_boltzman*temperature/mass_effective); %thermal velocity
 
-particleArray = [];
 %particle array is in following format: 
 %xPos, yPos, Velocity Mag, xDir(norm), yDir(norm)
+particleArray = [];
 
-Part2 = 1;
+tempArrary = []; %array to store temperature history
+particleXPos7Array = []; %array to store 7 X positions history
+particleYPos7Array = []; %array to store 7 Y positions history
+
+Part2 = 0;
 Part3 = 0;
 
 %initialize the particles
@@ -43,8 +47,8 @@ end
 %plot histogram of velocities
 figure(1);
 histogram(particleArray(:,3));
-title(['Histogram of Velocity Distribution, Mean = ' num2str(mean(particleArray(:,3)))]);
-xlabel('Thermal Velocity of a Given Particle');
+title(['Histogram of Initial Velocity Distribution, Mean = ' num2str(mean(particleArray(:,3)))]);
+xlabel('Thermal Velocity of a Given Particle (m/s)');
 ylabel('Counts');
 
 for simCount = 1:simLength
@@ -74,7 +78,7 @@ for simCount = 1:simLength
         end
     end
     
-%     figure(1);
+%     figure(2);
 %     hold on;
 %     plot([particleArray(1,1), new_xPos(1)],[particleArray(1,2), new_yPos(1)]);
 %     plot([particleArray(2,1), new_xPos(2)],[particleArray(2,2), new_yPos(2)]);
@@ -85,16 +89,53 @@ for simCount = 1:simLength
 %     plot([particleArray(7,1), new_xPos(7)],[particleArray(7,2), new_yPos(7)]);
 %     xlim([0,region_size_x]);
 %     ylim([0,region_size_y]);
-%     title(['Simulation Count: ', num2str(simCount), ', Timestep: ', num2str(timestep)]);
+%     title(['Particle Trajectory, Simulation Count: ', num2str(simCount), ', Timestep: ', num2str(timestep)]);
+%     xlabel('X (m)');
+%     ylabel('Y (m)');
 %     hold off;
     
     particleArray(:,1) = new_xPos;
     particleArray(:,2) = new_yPos;
     
-    
-    figure(2);
-    scatter(particleArray(:,1), particleArray(:,2), 5);
-    axis([0, region_size_x, 0, region_size_y]);
-    pause(0.01);
-    disp(['simcount: ', num2str(simCount), ' of ', num2str(simLength)]);
+    %Scatter plotting of the particles
+%     figure(4);
+%     scatter(particleArray(:,1), particleArray(:,2), 5);
+%     axis([0, region_size_x, 0, region_size_y]);
+%     title(['Scatter Plot of Particles in a box. Iteration: ', num2str(simCount)]);
+%     xlabel('X (m)');
+%     ylabel('Y (m)');
+
+    %save the particle position history to be plotted later
+     particleXPos7Array(1:7,simCount) = particleArray(1:7,1);
+     particleYPos7Array(1:7,simCount) = particleArray(1:7,2);
+
+    %save the temperature history to be plotted later
+    tempArray(simCount) = mean(particleArray(:,3))^2*mass_effective/const_boltzman;
+
+
+    %pause(0.0001); %quick pause so that the graphs can be displayed live
+    if(mod(simCount,100) == 0) %Update the console with current simCount
+        disp(['simcount: ', num2str(simCount), ' of ', num2str(simLength)]);
+    end
 end
+
+
+%plot the trajectory of the particles
+figure(10);
+hold on;
+for i = 1:7
+    plot(particleXPos7Array(i,:),particleYPos7Array(i,:));
+end
+xlim([0,region_size_x]);
+ylim([0,region_size_y]);
+title(['Particle Trajectory, Simulation Count: ', num2str(simCount), ', Timestep: ', num2str(timestep)]);
+xlabel('X (m)');
+ylabel('Y (m)');
+
+%plot the temperature over time
+figure(11);
+x = linspace(timestep,simLength*timestep,simLength);
+plot(x,tempArray);
+title('Average Temperature Over Time');
+xlabel('Time (s)');
+ylabel('Temperature (K)');
