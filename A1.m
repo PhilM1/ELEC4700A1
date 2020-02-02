@@ -1,5 +1,5 @@
 %Assignment 1 for ELEC 4700 - Philippe Masson
-
+tic;
 timestep = 1e-14; %10fs
 region_size_x = 200e-9; %meter
 region_size_y = 100e-9; %meter
@@ -19,7 +19,9 @@ particleArray = [];
 tempArrary = []; %array to store temperature history
 particleXPos7Array = []; %array to store 7 X positions history
 particleYPos7Array = []; %array to store 7 Y positions history
-scatterTimeArray = []; %array to store the time between scatters
+scatterPathSum = 0; %store the summed path between scatters
+scatterTimeSum = 0; %store the summed time between scatters
+numScatters = 0; %total number of particles scattered
 
 scatterProbability = 1 - exp(-timestep/collisionTime); %probability of particle being scattered
 
@@ -66,14 +68,16 @@ for simCount = 1:simLength
         particleArray(i,6) = particleArray(i,6) + timestep;
         
         if(rand <= scatterProbability) %scatter the particle
+            scatterPathSum = scatterPathSum + (particleArray(i,6)*particleArray(i,3)); %store path between scatters
+            scatterTimeSum = scatterTimeSum + particleArray(i,6); %store time between scatters
+            particleArray(i,6) = 0; %reset time since last scatter            
+            numScatters = numScatters + 1;
             particleArray(i,3) = randn*velocity_thermal + velocity_thermal; %randomize velocity
             particleArray(i,4) = (rand * 2) - 1; %x-direction (normalized)
             particleArray(i,5) = sqrt(1-particleArray(i,4)^2); %y-direction (normalized)
             if(rand > 0.5)
                 particleArray(i,5) = particleArray(i,5) * -1;
             end
-            %store time between scatters
-            particleArray(i,6) = 0; %reset time since last scatter
         end
     end
     
@@ -143,6 +147,17 @@ for simCount = 1:simLength
     end
 end
 
+disp('----------');
+disp(['Simulation ended successfully after ', num2str(toc), ' seconds.']);
+disp('----------');
+disp('Simulation Specs:');
+disp(['Timestep Size: ', num2str(timestep), ' seconds']);
+disp(['Number of Simulation Iterations: ', num2str(simLength)]);
+disp(['Number of Particles: ', num2str(numParticles)]);
+disp('----------');
+disp('Simulation Results:');
+disp(['Mean Free Path (MFP): ', num2str(scatterPathSum/numScatters), ' meters']);
+disp(['Time between Collisions: ', num2str(scatterTimeSum/numScatters), ' seconds']);
 
 %plot the trajectory of the particles
 figure(10);
