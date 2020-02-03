@@ -1,4 +1,6 @@
 %Assignment 1 for ELEC 4700 - Philippe Masson
+close all;
+clear;
 tic;
 timestep = 1e-14; %10fs
 region_size_x = 200e-9; %meter
@@ -25,15 +27,29 @@ numScatters = 0; %total number of particles scattered
 
 scatterProbability = 1 - exp(-timestep/collisionTime); %probability of particle being scattered
 
+%Specs for boxes
+box_Left = 80e-9;
+box_Right = 120e-9;
+box_Top = 60e-9;
+box_Bottom = 40e-9;
+
 %change both of these to 0 if you want part 1 plots
 Part2 = 1; %change this to 1 & Part3 to 0 if you want part 2 plots
-Part3 = 0; %change this to 1 if you want part 3 plots
+Part3 = 1; %change this to 1 if you want part 3 plots
 
 %initialize the particles
 for i = 1:numParticles
     %init positions
     particleArray(i,1) = rand * region_size_x;
     particleArray(i,2) = rand * region_size_y;
+    
+    if(Part3 == 1)
+        while(particleArray(i,1) >= box_Left && particleArray(i,1) <= box_Right && (particleArray(i,2) <= box_Bottom || particleArray(i,2) >= box_Top))
+            %pick new location, you're in the boxes!
+            particleArray(i,1) = rand * region_size_x;
+            particleArray(i,2) = rand * region_size_y;
+        end
+    end
     
     if(Part2 == 1 || Part3 == 1)
         vth = randn*velocity_thermal + velocity_thermal;
@@ -104,28 +120,44 @@ for simCount = 1:simLength
             new_yPos(i) = region_size_y - abs(new_yPos(i) - particleArray(i,2));
             particleArray(i,5) = particleArray(i,5) * -1; %swap direction
         end
+        
+        %You're in the boxes
+        if(new_xPos(i) >= box_Left && new_xPos(i) <= box_Right && (new_yPos(i) <= box_Bottom || new_yPos(i) >= box_Top))
+            %re-thermalize since you hit a box
+            %particleArray(i,3) = randn*velocity_thermal + velocity_thermal; %randomize velocity
+            if(particleArray(i,1) < box_Left)
+                tempx = box_Left - abs(new_xPos(i) - particleArray(i,1));
+                if(~(tempx >= box_Left && tempx <= box_Right && (new_yPos(i) <= box_Bottom || new_yPos(i) >= box_Top))) %not in box
+                    new_xPos(i) = tempx;
+                    particleArray(i,4) = particleArray(i,4) * -1; %swap direction
+                end
+            elseif(particleArray(i,1) > box_Right)
+                tempx = box_Right + abs(new_xPos(i) - particleArray(i,1));
+                if(~(tempx >= box_Left && tempx <= box_Right && (new_yPos(i) <= box_Bottom || new_yPos(i) >= box_Top))) %not in box
+                    new_xPos(i) = tempx;
+                    particleArray(i,4) = particleArray(i,4) * -1; %swap direction
+                end
+            elseif(particleArray(i,2) < box_Top)
+                tempy = box_Top - abs(new_yPos(i) - particleArray(i,2));
+                if(~(new_xPos(i) >= box_Left && new_xPos(i) <= box_Right && (tempy <= box_Bottom || tempy >= box_Top))) %not in box
+                    new_yPos(i) = tempy;
+                    particleArray(i,5) = particleArray(i,5) * -1; %swap direction
+                end
+            elseif(particleArray(i,2) > box_Bottom)
+                tempy = box_Bottom + abs(new_yPos(i) - particleArray(i,2));
+                if(~(new_xPos(i) >= box_Left && new_xPos(i) <= box_Right && (tempy <= box_Bottom || tempy >= box_Top))) %not in box
+                    new_yPos(i) = tempy;
+                    particleArray(i,5) = particleArray(i,5) * -1; %swap direction
+                end
+            end
+        end
     end
     
-%     figure(2);
-%     hold on;
-%     plot([particleArray(1,1), new_xPos(1)],[particleArray(1,2), new_yPos(1)]);
-%     plot([particleArray(2,1), new_xPos(2)],[particleArray(2,2), new_yPos(2)]);
-%     plot([particleArray(3,1), new_xPos(3)],[particleArray(3,2), new_yPos(3)]);
-%     plot([particleArray(4,1), new_xPos(4)],[particleArray(4,2), new_yPos(4)]);
-%     plot([particleArray(5,1), new_xPos(5)],[particleArray(5,2), new_yPos(5)]);
-%     plot([particleArray(6,1), new_xPos(6)],[particleArray(6,2), new_yPos(6)]);
-%     plot([particleArray(7,1), new_xPos(7)],[particleArray(7,2), new_yPos(7)]);
-%     xlim([0,region_size_x]);
-%     ylim([0,region_size_y]);
-%     title(['Particle Trajectory, Simulation Count: ', num2str(simCount), ', Timestep: ', num2str(timestep)]);
-%     xlabel('X (m)');
-%     ylabel('Y (m)');
-%     hold off;
     
     particleArray(:,1) = new_xPos;
     particleArray(:,2) = new_yPos;
     
-    %Scatter plotting of the particles
+    %Scatter plotting of the particles uncomment if you wanna see live plot
 %     figure(4);
 %     scatter(particleArray(:,1), particleArray(:,2), 5);
 %     axis([0, region_size_x, 0, region_size_y]);
@@ -178,3 +210,13 @@ plot(x,tempArray);
 title('Average Temperature Over Time');
 xlabel('Time (s)');
 ylabel('Temperature (K)');
+
+%plot a density map
+figure(12);
+hist3([particleArray(:,1), particleArray(:,2)],'Nbins',[40,20],'CdataMode','auto');
+colormap('hot');
+colorbar;
+view(2);
+title('Density Heatmap');
+xlabel('X (m)');
+ylabel('Y (m)');
